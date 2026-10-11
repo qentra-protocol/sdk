@@ -11,7 +11,7 @@ import { addSelfFetchFunctions, addSelfPlanAndSendFunctions, type SelfFetchFunct
 import { getConfigCodec, getRequestRecordCodec, type Config, type ConfigArgs, type RequestRecord, type RequestRecordArgs } from '../accounts/index.js';
 import { getCommitInstruction, getExpireEventInstruction, getExpireInstruction, getFulfillEventInstruction, getFulfillInstruction, getInitializeInstruction, getInitializeStreamInstruction, getRequestEventInstruction, getRequestInstruction, parseCommitInstruction, parseExpireEventInstruction, parseExpireInstruction, parseFulfillEventInstruction, parseFulfillInstruction, parseInitializeInstruction, parseInitializeStreamInstruction, parseRequestEventInstruction, parseRequestInstruction, type CommitInput, type ExpireEventInput, type ExpireInput, type FulfillEventInput, type FulfillInput, type InitializeInput, type InitializeStreamInput, type ParsedCommitInstruction, type ParsedExpireEventInstruction, type ParsedExpireInstruction, type ParsedFulfillEventInstruction, type ParsedFulfillInstruction, type ParsedInitializeInstruction, type ParsedInitializeStreamInstruction, type ParsedRequestEventInstruction, type ParsedRequestInstruction, type RequestEventInput, type RequestInput } from '../instructions/index.js';
 
-export const QENTRA_PROGRAM_ADDRESS = 'GKTHmxQSNhAS8BMjkWmzmJZzjDG5xw1Pp9x3daGEDWgz' as Address<'GKTHmxQSNhAS8BMjkWmzmJZzjDG5xw1Pp9x3daGEDWgz'>;
+export const QENTRA_PROGRAM_ADDRESS = 'CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d' as Address<'CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d'>;
 
 export enum QentraAccount { Config, RequestRecord }
 
@@ -50,7 +50,7 @@ if (containsBytes(data, fixEncoderSize(getBytesEncoder(), 8).encode(new Uint8Arr
     throw new SolanaError(SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_INSTRUCTION, { instructionData: data, programName: "qentra" });
 }
 
-export type ParsedQentraInstruction<TProgram extends string = 'GKTHmxQSNhAS8BMjkWmzmJZzjDG5xw1Pp9x3daGEDWgz'> =
+export type ParsedQentraInstruction<TProgram extends string = 'CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d'> =
 | { instructionType: QentraInstruction.Commit } & ParsedCommitInstruction<TProgram>
 | { instructionType: QentraInstruction.Expire } & ParsedExpireInstruction<TProgram>
 | { instructionType: QentraInstruction.ExpireEvent } & ParsedExpireEventInstruction<TProgram>

@@ -1,3 +1,4 @@
+// Explicit historical browser fixture; the root client is native Solana.
 import { digest, hex, mapOutput, type MappingConfig, type Repository, type RequestRecord } from '@qentra/core';
 export { IndexedDBRepository, MemoryRepository, validateRecord, mapOutput } from '@qentra/core';
 export type { MappingConfig, Mapping, RequestRecord, Repository } from '@qentra/core';

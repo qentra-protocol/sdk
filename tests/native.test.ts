@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { SolanaQVRFClient, SYSTEM_PROGRAM, MEMO_PROGRAM, paymentMemo, instructionData, bytes } from '../src/solana.js';
-import { getRequestEventInstructionDataEncoder } from '../src/generated/index.js';
+import { getRequestEventInstructionDataEncoder, QENTRA_PROGRAM_ADDRESS } from '../src/generated/index.js';
 const program='CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d';
 function fixture(){
  const client=new SolanaQVRFClient({rpcUrl:'http://127.0.0.1:1',program,quoteUrl:'https://quote.invalid/api/quote'});
@@ -29,7 +29,7 @@ test('generated request-event bytes align with native encoding and IDL discrimin
  const {u64,u32}=await import('../src/solana.js');
  assert.deepEqual(new Uint8Array(data),await instructionData('request_event',u64(2n),u32(input.length),input,bytes('ab'.repeat(32)),u64(500000n),bytes('cd'.repeat(32))));
  const idl=JSON.parse(await readFile(new URL('../idl/qentra.json',import.meta.url),'utf8'));
- assert.equal(idl.address,program);assert.deepEqual(Array.from(data.slice(0,8)),idl.instructions.find((x:any)=>x.name==='request_event').discriminator);
+ assert.equal(QENTRA_PROGRAM_ADDRESS,program);assert.equal(idl.address,program);assert.deepEqual(Array.from(data.slice(0,8)),idl.instructions.find((x:any)=>x.name==='request_event').discriminator);
 });
 test('payment verification requires exact transfer, signer, memo and atomic proof instruction',async()=>{
  const client=fixture(),key=await client.requestAddress(2n);
