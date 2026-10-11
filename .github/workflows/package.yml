@@ -25,6 +25,6 @@ jobs:
           path: |
             package-proof.json
             *.tgz
-            package-lock.json
             .package-proof/core/package-lock.json
+            .package-proof/consumer/package-lock.json
           include-hidden-files: true

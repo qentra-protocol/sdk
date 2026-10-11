@@ -31,7 +31,7 @@ try:
  shutil.copyfile(root/'examples/packed-consumer.mjs',consumer/'packed-consumer.mjs')
  run('fresh consumer install',['npm','install','--no-audit','--no-fund',str(coretar),str(sdktar)],consumer)
  run('fresh packed consumer',['node','packed-consumer.mjs'],consumer)
- for p in [coretar,sdktar,core/'package-lock.json',root/'package-lock.json']:
+ for p in [coretar,sdktar,core/'package-lock.json',consumer/'package-lock.json']:
   receipt['artifacts'].append({'path':str(p.relative_to(root)),'sha256':sha(p)})
  shutil.copyfile(coretar,root/coretar.name)
  receipt['status']='passed';save()
