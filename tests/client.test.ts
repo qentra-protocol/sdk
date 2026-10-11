@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { QVRFClient, BrowserEntropyAdapter, MemoryRepository, validateRecord, type EntropyAdapter } from '../src/index.ts';
+import { QVRFClient, BrowserEntropyAdapter, MemoryRepository, validateRecord, type EntropyAdapter } from '../src/browser.js';
 const deterministic: EntropyAdapter = {
   id: 'qentra-browser-v1', sourceMode: 'browser-cryptographic',
   request: async bytes => 'ab'.repeat(bytes),

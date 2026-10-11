@@ -1,13 +1,13 @@
-# Qentra SDK
+# Qentra Protocol SDK
 
-Typed request lifecycle for Qentra Protocol, quantum-verifiable randomness infrastructure for onchain applications.
+Randomness infrastructure for the quantum era: native Solana requests and checkable quantum-origin draws for tournament winners, allocation applicants and agent selection.
 
-Request entropy, observe generation, map an application outcome and export a reproducible record. The SDK imports the canonical `@qentra/core` package rather than maintaining another helper implementation.
+The primary `QVRFClient` is `SolanaQVRFClient`. An external wallet signs one ordinary-SOL transfer + indexed memo + proof-request transaction. Service-issued persisted quotes bind fixed rules; default shared-workspace draws have no per-draw rent. The SDK waits for checked reveal, verifies deterministic mapping, and reopens historical event or account proofs.
 
-## Develop from source
+Program: `CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d`. [Mainnet program](https://explorer.solana.com/address/CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d) · [Developer guide](https://github.com/nicpilsner/qentra-docs) · [Core/helpers](https://github.com/nicpilsner/project-repo).
 
-Use Node 22 or newer. First build the adjacent [core repository](https://github.com/nicpilsner/project-repo): run `npm install`, `npm run check`, and `npm pack` there. In this SDK repository, run `npm install --no-save ../project-repo/qentra-core-0.1.0-dev.0.tgz`, then `npm run check`. This supplies the exact development peer package without an npm publication. Keep the archive on the test runner; never attach shared account credentials to a cross-repository build.
+Use Node 22+ and reviewed local core/SDK tarballs. Version `0.2.0-dev.0` requires core peer `0.1.0-dev.0`; no npm publication is implied. See [client guide](docs/CLIENT.md), [native recipe](examples/native-draw.ts) and [packed consumer fixture](examples/packed-consumer.mjs).
 
-`npm run check` typechecks the SDK, tests and example, runs the lifecycle tests, executes `examples/request-and-map.ts`, and builds ESM/declarations. For a browser integration use a bundler and Web Crypto in a secure context. Select `IndexedDBRepository` for local browser history or `MemoryRepository` for ephemeral sessions.
+Exports: root client/types/mapping, `./solana` native primitives, `./generated` IDL codecs, `./idl` JSON interface, `./browser` retained historical source mode. Native records use schema 4; browser records use schema 1.
 
-See [client reference](docs/CLIENT.md), [quickstart](https://github.com/nicpilsner/qentra-docs/blob/main/quickstart.md) and [core source boundary](https://github.com/nicpilsner/project-repo/blob/main/docs/SOURCE.md).
+`npm run check` typechecks, runs focused tests, loads the native recipe, exercises the browser example and builds portable ESM. CI additionally packs both packages and executes a fresh installed consumer without source-relative imports. Its synthetic fixture performs no network payment. Source/trust, tariff changes and historical RPC retention are explained in the developer guide.

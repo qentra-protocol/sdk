@@ -1,0 +1,761 @@
+{
+  "address": "GKTHmxQSNhAS8BMjkWmzmJZzjDG5xw1Pp9x3daGEDWgz",
+  "metadata": {
+    "name": "qentra",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "commit",
+      "discriminator": [
+        223,
+        140,
+        142,
+        165,
+        229,
+        208,
+        156,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "slots",
+          "type": "u32"
+        }
+      ]
+    },
+    {
+      "name": "expire",
+      "discriminator": [
+        243,
+        83,
+        205,
+        58,
+        57,
+        201,
+        247,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "request",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "expire_event",
+      "discriminator": [
+        144,
+        197,
+        209,
+        39,
+        229,
+        42,
+        195,
+        13
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "stream",
+          "writable": true
+        },
+        {
+          "name": "identity"
+        }
+      ],
+      "args": [
+        {
+          "name": "sequence",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "fulfill",
+      "discriminator": [
+        143,
+        2,
+        52,
+        206,
+        174,
+        164,
+        247,
+        72
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "request",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "contribution",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "fulfill_event",
+      "discriminator": [
+        5,
+        71,
+        118,
+        83,
+        253,
+        75,
+        60,
+        165
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "stream",
+          "writable": true
+        },
+        {
+          "name": "identity"
+        }
+      ],
+      "args": [
+        {
+          "name": "sequence",
+          "type": "u64"
+        },
+        {
+          "name": "contribution",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "controller",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        },
+        {
+          "name": "program"
+        },
+        {
+          "name": "program_data"
+        }
+      ],
+      "args": [
+        {
+          "name": "operator",
+          "type": "pubkey"
+        },
+        {
+          "name": "recipient",
+          "type": "pubkey"
+        },
+        {
+          "name": "fee",
+          "type": "u64"
+        },
+        {
+          "name": "refund_seconds",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "initialize_stream",
+      "discriminator": [
+        118,
+        75,
+        0,
+        207,
+        137,
+        93,
+        113,
+        74
+      ],
+      "accounts": [
+        {
+          "name": "controller",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config"
+        },
+        {
+          "name": "stream",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "request",
+      "discriminator": [
+        46,
+        101,
+        67,
+        11,
+        76,
+        137,
+        12,
+        173
+      ],
+      "accounts": [
+        {
+          "name": "requester",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "request",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "sequence",
+          "type": "u64"
+        },
+        {
+          "name": "inputs",
+          "type": "bytes"
+        },
+        {
+          "name": "user_contribution",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "quoted_fee",
+          "type": "u64"
+        },
+        {
+          "name": "quoted_root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "request_event",
+      "discriminator": [
+        30,
+        233,
+        211,
+        68,
+        32,
+        52,
+        74,
+        192
+      ],
+      "accounts": [
+        {
+          "name": "requester",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true
+        },
+        {
+          "name": "stream",
+          "writable": true
+        },
+        {
+          "name": "identity"
+        }
+      ],
+      "args": [
+        {
+          "name": "sequence",
+          "type": "u64"
+        },
+        {
+          "name": "inputs",
+          "type": "bytes"
+        },
+        {
+          "name": "user_contribution",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "quoted_fee",
+          "type": "u64"
+        },
+        {
+          "name": "quoted_root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "RequestRecord",
+      "discriminator": [
+        45,
+        90,
+        250,
+        188,
+        51,
+        127,
+        189,
+        14
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "ExpirationPublished",
+      "discriminator": [
+        250,
+        232,
+        172,
+        129,
+        5,
+        11,
+        47,
+        23
+      ]
+    },
+    {
+      "name": "Fulfilled",
+      "discriminator": [
+        210,
+        174,
+        131,
+        213,
+        40,
+        182,
+        83,
+        110
+      ]
+    },
+    {
+      "name": "RequestPublished",
+      "discriminator": [
+        178,
+        112,
+        214,
+        232,
+        178,
+        116,
+        235,
+        24
+      ]
+    },
+    {
+      "name": "Requested",
+      "discriminator": [
+        193,
+        152,
+        94,
+        182,
+        138,
+        135,
+        173,
+        205
+      ]
+    },
+    {
+      "name": "RevealPublished",
+      "discriminator": [
+        101,
+        78,
+        87,
+        3,
+        214,
+        172,
+        189,
+        221
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidInput",
+      "msg": "Invalid request or quote"
+    },
+    {
+      "code": 6001,
+      "name": "Capacity",
+      "msg": "Request capacity changed; refresh the quote"
+    },
+    {
+      "code": 6002,
+      "name": "WrongState",
+      "msg": "Request is not ready for this action"
+    },
+    {
+      "code": 6003,
+      "name": "BadReveal",
+      "msg": "Reveal does not match the commitment"
+    },
+    {
+      "code": 6004,
+      "name": "UnauthorizedInitializer",
+      "msg": "Only the program upgrade authority can initialize Qentra"
+    }
+  ],
+  "types": [
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "controller",
+            "type": "pubkey"
+          },
+          {
+            "name": "operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "refund_seconds",
+            "type": "i64"
+          },
+          {
+            "name": "next",
+            "type": "u64"
+          },
+          {
+            "name": "root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "slots",
+            "type": "u32"
+          },
+          {
+            "name": "used",
+            "type": "u32"
+          },
+          {
+            "name": "pending",
+            "type": "u32"
+          },
+          {
+            "name": "batch_first",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ExpirationPublished",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "record",
+            "type": {
+              "defined": {
+                "name": "RequestRecord"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Fulfilled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sequence",
+            "type": "u64"
+          },
+          {
+            "name": "output",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RequestPublished",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "record",
+            "type": {
+              "defined": {
+                "name": "RequestRecord"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RequestRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "config",
+            "type": "pubkey"
+          },
+          {
+            "name": "sequence",
+            "type": "u64"
+          },
+          {
+            "name": "requester",
+            "type": "pubkey"
+          },
+          {
+            "name": "user_contribution",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "num_hashes",
+            "type": "u32"
+          },
+          {
+            "name": "input_digest",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "output",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "contribution",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "fee",
+            "type": "u64"
+          },
+          {
+            "name": "requested_at",
+            "type": "i64"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "inputs",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Requested",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sequence",
+            "type": "u64"
+          },
+          {
+            "name": "request",
+            "type": "pubkey"
+          },
+          {
+            "name": "requester",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RevealPublished",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "record",
+            "type": {
+              "defined": {
+                "name": "RequestRecord"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

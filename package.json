@@ -1,27 +1,41 @@
 {
   "name": "@qentra/sdk",
-  "version": "0.1.0-dev.0",
+  "version": "0.2.0-dev.0",
   "private": true,
   "type": "module",
-  "description": "Qentra Protocol sdk: request records and reproducible application randomness",
+  "description": "Qentra Protocol native Solana requests, generated codecs and checkable draw proofs",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./solana": {
+      "types": "./dist/solana.d.ts",
+      "import": "./dist/solana.js"
+    },
+    "./generated": {
+      "types": "./dist/generated/index.d.ts",
+      "import": "./dist/generated/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
+    },
+    "./idl": "./idl/qentra.json"
   },
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "schemas",
+    "idl",
     "README.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.verify.json",
     "test": "tsx --test tests/*.test.ts",
-    "example": "tsx examples/request-and-map.ts",
-    "check": "npm run typecheck && npm test && npm run example && npm run build"
+    "example": "tsx examples/native-draw.ts && tsx examples/browser-request-and-map.ts",
+    "check": "npm run typecheck && npm test && npm run example && npm run build",
+    "consumer": "node examples/packed-consumer.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -33,5 +47,9 @@
   },
   "peerDependencies": {
     "@qentra/core": "0.1.0-dev.0"
+  },
+  "dependencies": {
+    "@solana/kit": "8.4.0",
+    "@solana/program-client-core": "8.4.0"
   }
 }

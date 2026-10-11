@@ -1,3 +1,10 @@
 node_modules/
 dist/
 *.tgz
+
+.package-proof/
+package-proof.json
+*.tgz
+!tests/fixtures/core-source.tgz
+node_modules/
+dist/
