@@ -1,14 +1,17 @@
 // Synthetic fixture: no network calls, wallet funds or source-physics claims.
 import assert from 'node:assert/strict';
+import { generateKeyPairSync, sign, verify } from 'node:crypto';
+import { getBase58Decoder, getTransactionDecoder, getTransactionEncoder } from '@solana/kit';
 import { QVRFClient, SolanaQVRFClient, mapOutput, verifyProtocolRecord } from '@qentra/sdk';
 import { bytes, hex, hash, pub, paymentMemo, SYSTEM_PROGRAM, MEMO_PROGRAM } from '@qentra/sdk/solana';
 import { getRequestEventInstructionDataDecoder, getRequestEventInstructionDataEncoder } from '@qentra/sdk/generated';
 const program='CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d';
-const requester=SYSTEM_PROGRAM;
+const keypair=generateKeyPairSync('ed25519');
+const requester=getBase58Decoder().decode(new Uint8Array(keypair.publicKey.export({format:'der',type:'spki'}).subarray(-32)));
 const enc=new TextEncoder();
 const input={bytes:32,mapping:{kind:'pickUnique',items:['Amber','Birch','Cedar'],count:1}};
 const config={controller:requester,operator:requester,recipient:requester,fee:1n,refundSeconds:60n,next:2n,root:'ab'.repeat(32),slots:32,used:1,pending:0,batchFirst:1n,bump:255};
-const client=new QVRFClient({rpcUrl:'http://127.0.0.1:1',program,quoteUrl:'https://quote.invalid/api/quote',wallet:{address:requester,signTransaction:async wire=>{signatures++;return wire;}}});
+const client=new QVRFClient({rpcUrl:'http://127.0.0.1:1',program,quoteUrl:'https://quote.invalid/api/quote',wallet:{address:requester,signTransaction:async wire=>{signatures++;const transaction=getTransactionDecoder().decode(wire);const signature=new Uint8Array(sign(null,new Uint8Array(transaction.messageBytes),keypair.privateKey));assert.equal(verify(null,new Uint8Array(transaction.messageBytes),keypair.publicKey,signature),true);return new Uint8Array(getTransactionEncoder().encode({...transaction,signatures:{...transaction.signatures,[requester]:signature}}));}}});
 assert.equal(QVRFClient,SolanaQVRFClient);
 let signatures=0; let wire;
 client.networkId=async()=> 'fixture-network';client.config=async()=>config;client.streamReady=async()=>true;
@@ -46,6 +49,6 @@ assert.equal(paymentMemo(key),`QENTRA:request:${key}`);assert.notEqual(SYSTEM_PR
 await assert.rejects(()=>client.request(input,{expectedFee:1n}),/price changed/);assert.equal(signatures,1);
 config.fee=900000n;await verifyProtocolRecord(reopened);assert.equal(reopened.feeQuoted,'500000');
 await assert.rejects(()=>verifyProtocolRecord({...reopened,input:{...reopened.input,serviceQuote:'changed'}}),/Fixed inputs/);
-console.log(JSON.stringify({fixture:true,packageConsumer:true,oneExternalWalletCall:signatures,noRequestRent:quote.noRequestRent,proofVerified:true,exportReopened:true,historicalFee:reopened.feeQuoted,mapping:reopened.mapping,wireBytes:wire.length}));
+console.log(JSON.stringify({fixture:true,packageConsumer:true,oneExternalWalletCall:signatures,cryptographicFixtureSignature:true,noRequestRent:quote.noRequestRent,proofVerified:true,exportReopened:true,historicalFee:reopened.feeQuoted,mapping:reopened.mapping,wireBytes:wire.length}));
 
 globalThis.fetch=originalFetch;

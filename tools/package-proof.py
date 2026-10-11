@@ -11,10 +11,12 @@ try:
  assert not any(os.environ.get(k) for k in ['GH_TOKEN','GITHUB_TOKEN','NODE_AUTH_TOKEN','NPM_TOKEN','HTTPS_PROXY','https_proxy','HTTP_PROXY','http_proxy','AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY']),'credential-bearing environment'
  assert not (pathlib.Path.home()/'.npmrc').exists() and not (pathlib.Path.home()/'.netrc').exists(),'credential file'
  archive=root/'tests/fixtures/core-source.tgz'
- assert sha(archive)=='b2dea93fd4e7e0fefc65f40620b36b702b615be8f279320b52e81d8d6c693bfc','core courier changed'
+ assert sha(archive)=='f484a43d595afecef0b45f9a372ebc376cb339399a1f8644afdf39b1012064f6','core courier changed'
  core=work/'core';core.mkdir(exist_ok=True)
  with tarfile.open(archive) as t:
-  for m in t.getmembers():assert not m.issym() and not m.islnk() and not pathlib.PurePosixPath(m.name).is_absolute() and '..' not in pathlib.PurePosixPath(m.name).parts
+  for m in t.getmembers():
+   assert m.uid==m.gid==0 and not m.uname and not m.gname,'archive owner metadata'
+   assert not m.issym() and not m.islnk() and not pathlib.PurePosixPath(m.name).is_absolute() and '..' not in pathlib.PurePosixPath(m.name).parts
   t.extractall(core,filter='data')
  receipt['core_source_sha256']=sha(core/'src/index.ts');receipt['core_courier_sha256']=sha(archive);receipt['credential_environment_absent']=True;save()
  run('core install',['npm','install','--no-audit','--no-fund'],core)
