@@ -1,30 +1,113 @@
-name: Native SDK package proof
+name: Native SDK isolated package proof
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-permissions:
-  contents: read
+    inputs:
+      candidate:
+        description: Immutable private SDK commit SHA
+        required: true
+        type: string
+      manifest:
+        description: Complete source manifest SHA256
+        required: true
+        type: string
+permissions: {}
 jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Acquire and verify exact private source without execution
+        env:
+          TOKEN: ${{ github.token }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          CANDIDATE: ${{ inputs.candidate }}
+          MANIFEST: ${{ inputs.manifest }}
+        run: |
+          python3 - <<'PY'
+          import os,re,json,hashlib,pathlib,urllib.request,tarfile,io
+          assert os.environ['GITHUB_REPOSITORY']=='nicpilsner/qentra-sdk'
+          assert os.environ['REPOSITORY_ID']=='1412008493'
+          sha=os.environ['CANDIDATE']; expected=os.environ['MANIFEST']
+          assert re.fullmatch('[0-9a-f]{40}',sha) and re.fullmatch('[0-9a-f]{64}',expected)
+          req=urllib.request.Request('https://api.github.com/repos/nicpilsner/qentra-sdk/tarball/'+sha,headers={'Authorization':'Bearer '+os.environ['TOKEN'],'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req,timeout=60) as r: data=r.read(16*1024*1024+1)
+          assert len(data)<=16*1024*1024,'archive limit'
+          root=pathlib.Path('snapshot/source'); root.mkdir(parents=True)
+          entries=[];seen=set();total=0
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as t:
+           members=t.getmembers();assert len(members)<=5000
+           prefix=members[0].name.split('/')[0]
+           for m in members:
+            parts=pathlib.PurePosixPath(m.name).parts
+            assert parts[0]==prefix and not m.name.startswith('/') and '..' not in parts
+            if m.isdir():continue
+            assert m.isfile() and not m.issym() and not m.islnk(),'regular files only'
+            name='/'.join(parts[1:]);assert name and name not in seen and str(pathlib.PurePosixPath(name))==name
+            assert not any(p in {'.git','.env','.npmrc','.netrc','.secrets','node_modules'} for p in parts)
+            assert m.size<=8*1024*1024; total+=m.size;assert total<=64*1024*1024
+            seen.add(name);body=t.extractfile(m).read();assert len(body)==m.size
+            dest=root/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(body)
+            entries.append({'path':name,'bytes':len(body),'sha256':hashlib.sha256(body).hexdigest()})
+          entries.sort(key=lambda x:x['path'])
+          manifest=json.dumps(entries,sort_keys=True,separators=(',',':')).encode()
+          assert hashlib.sha256(manifest).hexdigest()==expected,'source manifest mismatch'
+          pathlib.Path('snapshot/MANIFEST.json').write_bytes(manifest)
+          pathlib.Path('snapshot/ACQUISITION.json').write_text(json.dumps({'repository_id':1412008493,'candidate':sha,'manifest_sha256':expected,'files':len(entries),'bytes':total,'run_id':os.environ['GITHUB_RUN_ID'],'workflow_sha':os.environ['GITHUB_WORKFLOW_SHA']}))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verified-source
+          path: snapshot
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
   package:
+    needs: acquire
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions: {}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          persist-credentials: false
-      - uses: actions/setup-node@v4
+          name: verified-source
+          path: snapshot
+      - name: Revalidate same-run source before execution
+        env:
+          CANDIDATE: ${{ inputs.candidate }}
+          MANIFEST: ${{ inputs.manifest }}
+        run: |
+          python3 - <<'PY'
+          import os,json,pathlib,hashlib
+          assert not any(os.environ.get(k) for k in ['TOKEN','GH_TOKEN','GITHUB_TOKEN','NODE_AUTH_TOKEN','NPM_TOKEN','HTTPS_PROXY','https_proxy'])
+          root=pathlib.Path('snapshot/source');raw=pathlib.Path('snapshot/MANIFEST.json').read_bytes()
+          assert hashlib.sha256(raw).hexdigest()==os.environ['MANIFEST']
+          entries=json.loads(raw);assert sorted(p.relative_to(root).as_posix() for p in root.rglob('*') if p.is_file())==[x['path'] for x in entries]
+          for x in entries:
+           p=root/x['path'];assert not p.is_symlink();b=p.read_bytes();assert len(b)==x['bytes'] and hashlib.sha256(b).hexdigest()==x['sha256']
+          a=json.loads(pathlib.Path('snapshot/ACQUISITION.json').read_text());assert a['candidate']==os.environ['CANDIDATE'] and a['manifest_sha256']==os.environ['MANIFEST']
+          print(json.dumps({'consumed':a,'source_verified':True}))
+          PY
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
-      - name: Isolated core, SDK and fresh packed consumer
+          token: ''
+      - name: Isolated core, SDK and fresh packed consumers
+        working-directory: snapshot/source
         run: python3 tools/package-proof.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: native-package-proof
           path: |
-            package-proof.json
-            *.tgz
-            .package-proof/core/package-lock.json
-            .package-proof/consumer/package-lock.json
+            snapshot/ACQUISITION.json
+            snapshot/MANIFEST.json
+            snapshot/source/package-proof.json
+            snapshot/source/*.tgz
+            snapshot/source/.package-proof/consumer/offline-proof-receipt.json
+            snapshot/source/.package-proof/core/package-lock.json
+            snapshot/source/.package-proof/consumer/package-lock.json
           include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
