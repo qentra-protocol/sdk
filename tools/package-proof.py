@@ -34,7 +34,10 @@ try:
  run('fresh packed consumer',['node','packed-consumer.mjs'],consumer)
  shutil.copyfile(root/'examples/offline-proof-consumer.mjs',consumer/'offline-proof-consumer.mjs')
  run('installed offline proof-file CLI consumer',['node','offline-proof-consumer.mjs'],consumer)
- (consumer/'proof-types.ts').write_text("import { parseProofFile, exportProofFile, verifyProofFile, type ProtocolRecord, type OfflineProofVerification } from '@qentra/sdk';\nimport { parseProofFile as subpath } from '@qentra/sdk/proof';\nasync function journey(text: string) { const r: ProtocolRecord = await parseProofFile(text); const json: string = await exportProofFile(r); const v: OfflineProofVerification = await verifyProofFile(await subpath(json)); return v.mapping.result; }\n")
+ shutil.copyfile(root/'examples/recovery-consumer.mjs',consumer/'recovery-consumer.mjs')
+ run('installed interrupted draw fresh-process recovery',['node','recovery-consumer.mjs'],consumer)
+ receipt['interrupted_draw']=json.loads((consumer/'interrupted-draw-receipt.json').read_text());save()
+ (consumer/'proof-types.ts').write_text("import { parseProofFile, exportProofFile, verifyProofFile, type ProtocolRecord, type OfflineProofVerification } from '@qentra/sdk';\nimport { parseProofFile as subpath } from '@qentra/sdk/proof';\nasync function journey(text: string) { const r: ProtocolRecord = await parseProofFile(text); const json: string = await exportProofFile(r); const v: OfflineProofVerification = await verifyProofFile(await subpath(json)); return v.mapping.result; }\nimport { QVRFClient, parseRecoveryCheckpoint, type RecoveryCheckpoint, type RecoveryResult } from '@qentra/sdk';\nasync function recover(client: QVRFClient, text: string) { const c: RecoveryCheckpoint = await parseRecoveryCheckpoint(text); const r: RecoveryResult = await client.recoverRequest(c); return r.state; }\n")
  run('installed proof-file declarations',['node',str(root/'node_modules/typescript/bin/tsc'),'--noEmit','--strict','--skipLibCheck','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','proof-types.ts'],consumer)
  for p in [coretar,sdktar,core/'package-lock.json',consumer/'package-lock.json']:
   receipt['artifacts'].append({'path':str(p.relative_to(root)),'sha256':sha(p)})

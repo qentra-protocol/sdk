@@ -4,3 +4,5 @@ export { mapOutput } from '@qentra/core';
 export type { MappingConfig, Mapping } from '@qentra/core';
 export { parseProofFile, exportProofFile, verifyProofFile } from './proof.js';
 export type { OfflineProofVerification } from './proof.js';
+export { parseRecoveryCheckpoint, RecoverableRequestError } from './solana.js';
+export type { RecoveryCheckpoint, RecoveryResult } from './solana.js';

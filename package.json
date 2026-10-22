@@ -32,7 +32,9 @@
     "dist",
     "idl",
     "README.md",
-    "docs/PROOF_FILES.md"
+    "docs/PROOF_FILES.md",
+    "docs/RECOVERY.md",
+    "examples/interrupted-draw.mjs"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

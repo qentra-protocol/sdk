@@ -21,3 +21,7 @@ After installing the reviewed core/SDK tarballs, run:
 ```
 
 The command checks local content integrity and prints the recorded identity and reproduced winner/allocation with `scope: "offline-content-integrity"`. No wallet, RPC or payment is used. Organizers export fulfilled draws with `exportProofFile(record)`; recipients import with `parseProofFile(text)` and can inspect `verifyProofFile(record)`. See the [proof-file journey](docs/PROOF_FILES.md) for API contracts, JSON compatibility, errors and the explicit chain-provenance boundary. Root and `./proof` exports include declarations; existing imports remain unchanged.
+
+## Interrupted draws
+
+Save a typed checkpoint before broadcast and reopen the same draw from a wallet-free process: [recovery guide](docs/RECOVERY.md). Recovery is read-only; it never resubmits a payment.

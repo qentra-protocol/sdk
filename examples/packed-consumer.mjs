@@ -14,13 +14,13 @@ const config={controller:requester,operator:requester,recipient:requester,fee:1n
 const client=new QVRFClient({rpcUrl:'http://127.0.0.1:1',program,quoteUrl:'https://quote.invalid/api/quote',wallet:{address:requester,signTransaction:async wire=>{signatures++;const transaction=getTransactionDecoder().decode(wire);const signature=new Uint8Array(sign(null,new Uint8Array(transaction.messageBytes),keypair.privateKey));assert.equal(verify(null,new Uint8Array(transaction.messageBytes),keypair.publicKey,signature),true);return new Uint8Array(getTransactionEncoder().encode({...transaction,signatures:{...transaction.signatures,[requester]:signature}}));}}});
 assert.equal(QVRFClient,SolanaQVRFClient);
 let signatures=0; let wire;
-client.networkId=async()=> 'fixture-network';client.config=async()=>config;client.streamReady=async()=>true;
+client.networkId=async()=> SYSTEM_PROGRAM;client.config=async()=>config;client.streamReady=async()=>true;
 const originalFetch=globalThis.fetch;
 globalThis.fetch=async(_url,init)=>{const bound=init?.body?JSON.parse(String(init.body)):{};return new Response(JSON.stringify({program,recipient:requester,amount:'500000',id:'11111111-1111-4111-8111-111111111111',requester:bound.requester??requester,sequence:bound.sequence??'2',requestAddress:await client.requestAddress(2n),expiresAt:Math.floor(Date.now()/1000)+60}),{status:200});};
 client.rpc={
  getLatestBlockhash:()=>({send:async()=>({value:{blockhash:SYSTEM_PROGRAM,lastValidBlockHeight:999n}})}),
  simulateTransaction:()=>({send:async()=>({value:{err:null}})}),
- sendTransaction:value=>({send:async()=>{wire=value;return 'fixture-signature';}}),
+ sendTransaction:value=>({send:async()=>{wire=value;return getBase58Decoder().decode(getTransactionDecoder().decode(Buffer.from(value,'base64')).signatures[requester]);}}),
  getSignatureStatuses:()=>({send:async()=>({value:[{err:null,confirmationStatus:'confirmed'}]})}),
 };
 const contribution='22'.repeat(32);let user='33'.repeat(32);const root=hex(await hash(bytes(contribution)));config.root=root;
@@ -29,16 +29,16 @@ client.getRequest=async()=>record;
 const key=await client.requestAddress(2n);const fixedInput={...input,serviceQuote:'11111111-1111-4111-8111-111111111111'};
 let digest=hex(await hash(enc.encode(JSON.stringify(fixedInput))));
 let output=hex(await hash(enc.encode('qentra-solana-v1'),pub(key),bytes(user),bytes(contribution),bytes(digest)));
-record={schemaVersion:4,id:`solana:fixture-network:${program}:2`,network:'fixture-network',contract:program,sequence:'2',createdAt:'2026-10-11T00:00:00.000Z',input:fixedInput,inputDigest:digest,state:'fulfilled',verification:'verified',delivery:'not-requested',requester,feePaid:'500000',feeQuoted:'500000',paymentVerified:true,recipient:requester,userContribution:user,providerCommitment:root,numHashes:1,providerContribution:contribution,outputBytes:output,mapping:await mapOutput(output,input.mapping),storage:'events',requestAddress:key,callbackProgram:SYSTEM_PROGRAM,callbackAccount:SYSTEM_PROGRAM};
+record={schemaVersion:4,id:`solana:${SYSTEM_PROGRAM}:${program}:2`,network:SYSTEM_PROGRAM,contract:program,sequence:'2',createdAt:'2026-10-11T00:00:00.000Z',input:fixedInput,inputDigest:digest,state:'fulfilled',verification:'verified',delivery:'not-requested',requester,feePaid:'500000',feeQuoted:'500000',paymentVerified:true,recipient:requester,userContribution:user,providerCommitment:root,numHashes:1,providerContribution:contribution,outputBytes:output,mapping:await mapOutput(output,input.mapping),storage:'events',requestAddress:key,callbackProgram:SYSTEM_PROGRAM,callbackAccount:SYSTEM_PROGRAM};
 const quote=await client.quote();assert.equal(quote.amount,500000n);assert.equal(quote.noRequestRent,true);
 const actualSend=client.send.bind(client);
-client.send=async instructions=>{
+client.send=async (instructions,...args)=>{
  assert.equal(instructions.length,3);assert.equal(instructions[0].programAddress,SYSTEM_PROGRAM);assert.equal(instructions[1].programAddress,MEMO_PROGRAM);
  const decoded=getRequestEventInstructionDataDecoder().decode(instructions[2].data);
  const boundInput=JSON.parse(new TextDecoder().decode(decoded.inputs));assert.deepEqual(boundInput,fixedInput);assert.equal(decoded.quotedFee,500000n);assert.equal(hex(new Uint8Array(decoded.quotedRoot)),root);
  user=hex(new Uint8Array(decoded.userContribution));digest=hex(await hash(enc.encode(JSON.stringify(boundInput))));output=hex(await hash(enc.encode('qentra-solana-v1'),pub(key),bytes(user),bytes(contribution),bytes(digest)));
  record={...record,input:boundInput,inputDigest:digest,userContribution:user,outputBytes:output,mapping:await mapOutput(output,input.mapping)};
- return actualSend(instructions);
+ return actualSend(instructions,...args);
 };
 const request=await client.request(input,{expectedFee:quote.amount});assert.equal(signatures,1);assert.ok(wire);
 const result=await client.waitForResult(request.id);await verifyProtocolRecord(result);assert.equal(await client.verify(result),true);

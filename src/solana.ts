@@ -1,5 +1,5 @@
 import { address, createSolanaRpc, getAddressEncoder,
-  getBase64Encoder, getBase58Encoder, getBase64EncodedWireTransaction, createTransactionMessage, setTransactionMessageFeePayer,
+  getBase64Encoder, getBase58Encoder, getBase58Decoder, getBase64EncodedWireTransaction, createTransactionMessage, setTransactionMessageFeePayer,
   setTransactionMessageLifetimeUsingBlockhash, appendTransactionMessageInstructions, compileTransaction,
   getTransactionEncoder, getTransactionDecoder, getProgramDerivedAddress, AccountRole, type Instruction } from '@solana/kit';
 import { getConfigDecoder } from './generated/accounts/config.js';
@@ -37,6 +37,46 @@ export type ProtocolRecord={schemaVersion:4;id:string;network:string;contract:st
  providerCommitment:string;numHashes:number;providerContribution?:string|undefined;outputBytes?:string|undefined;
  mapping?:Mapping|undefined;commitmentTx?:string|undefined;requestTx?:string|undefined;revealTx?:string|undefined;deliveryTx?:string|undefined;
  storage?:'events'|'account';requestAddress:string;callbackProgram:string;callbackAccount:string};
+/** Prepared and signed, not evidence of broadcast, payment or confirmation. No wire bytes or keys. */
+export type RecoveryCheckpoint = Readonly<{
+ version: 1; id: string; network: string; program: string; sequence: string; requestAddress: string;
+ requester: string; input: ProtocolInput; inputDigest: string; userContribution: string;
+ providerCommitment: string; recipient: string; feeQuoted: string; storage: 'events'|'account';
+ signature: string; blockhash: string; lastValidBlockHeight: string;
+}>;
+export type RecoveryResult = { state: 'pending'|'failed'|'expired'|'fulfilled'; checkpoint: RecoveryCheckpoint;
+ record?: ProtocolRecord; reason?: string; scope: 'submission'|'request' };
+export class RecoverableRequestError extends Error {
+ constructor(message: string, readonly checkpoint: RecoveryCheckpoint, readonly broadcastAttempted: boolean, readonly cause?: unknown) {
+  super(message); this.name='RecoverableRequestError';
+ }
+}
+class RequestUnavailableError extends Error {}
+function immutable<T>(value:T):T {
+ if(value && typeof value==='object'){for(const child of Object.values(value))immutable(child);Object.freeze(value);}return value;
+}
+/** Validate a JSON file independently of a wallet. RPC binding is checked by recoverRequest. */
+export async function parseRecoveryCheckpoint(text:string):Promise<RecoveryCheckpoint> {
+ const c=JSON.parse(text);
+ if(!c || c.version!==1)throw Error('Unsupported recovery checkpoint');
+ for(const field of ['network','program','requestAddress','requester','recipient','blockhash'])address(c[field]);
+ for(const field of ['sequence','lastValidBlockHeight','feeQuoted']){
+  if(typeof c[field]!=='string'||! /^(0|[1-9][0-9]*)$/.test(c[field])||BigInt(c[field])>18446744073709551615n)throw Error('Invalid recovery '+field);
+ }
+ if(typeof c.signature!=='string'||getBase58Encoder().encode(c.signature).length!==64)throw Error('Invalid recovery signature');
+ if(c.storage!=='events'&&c.storage!=='account')throw Error('Invalid recovery storage');
+ if(c.id!==`solana:${c.network}:${c.program}:${c.sequence}`)throw Error('Recovery request identity changed');
+ if(c.input?.bytes!==32)throw Error('Invalid recovery fixed input');
+ await mapOutput('00'.repeat(32),c.input.mapping);
+ const encoded=enc.encode(JSON.stringify(c.input));
+ if(encoded.length>512||c.inputDigest!==hex(await hash(encoded)))throw Error('Recovery fixed input changed');
+ bytes(c.userContribution);bytes(c.providerCommitment);
+ // Return only public fields; never carry unexpected signed bytes/secret properties forward.
+ const {version,id,network,program,sequence,requestAddress,requester,input,inputDigest,userContribution,
+  providerCommitment,recipient,feeQuoted,storage,signature,blockhash,lastValidBlockHeight}=c;
+ return immutable({version,id,network,program,sequence,requestAddress,requester,input,inputDigest,userContribution,
+  providerCommitment,recipient,feeQuoted,storage,signature,blockhash,lastValidBlockHeight});
+}
 export type Config={controller:string;operator:string;recipient:string;fee:bigint;refundSeconds:bigint;next:bigint;root:string;slots:number;used:number;pending:number;batchFirst:bigint;bump:number};
 export async function verifyProtocolRecord(r:ProtocolRecord){
  if(r.schemaVersion!==4||r.input.bytes!==32||r.state!=='fulfilled'||!r.providerContribution||!r.outputBytes)throw Error('Wait for a fulfilled Solana request');
@@ -59,7 +99,8 @@ export class SolanaQVRFClient {
  async requestAddress(sequence:bigint){return String((await getProgramDerivedAddress({programAddress:this.program,seeds:[enc.encode('request'),pub(await this.configAddress()),u64(sequence)]}))[0]);}
  async account(key:string,name:string){
   const result=await this.rpc.getAccountInfo(address(key),{encoding:'base64',commitment:'confirmed'}).send();
-  if(!result.value||result.value.owner!==this.program)throw Error('Request program account not found');
+  if(!result.value)throw new RequestUnavailableError('Request program account not found');
+  if(result.value.owner!==this.program)throw Error('Unexpected request account owner');
   const data=new Uint8Array(getBase64Encoder().encode(result.value.data[0]));
   if(hex(data.slice(0,8))!==hex((await hash(enc.encode(`account:${name}`))).slice(0,8)))throw Error('Unexpected account type');return data;
  }
@@ -78,7 +119,7 @@ export class SolanaQVRFClient {
  }
  async quote(){if(!this.options.quoteUrl&&await this.networkId()==='5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d')throw Error('Configure the service quote URL for mainnet pricing');const c=await this.config(),noRequestRent=await this.streamReady(),q=await this.serviceQuote();return {amount:q?BigInt(q.amount):c.fee,recipient:c.recipient,symbol:'SOL',decimals:9,capacity:BigInt(c.slots-c.used),noRequestRent,ready:noRequestRent&&c.pending===0};}
  async approveFee(){if(!this.options.wallet)throw Error('Connect your wallet');return this.quote();}
- async send(instruction:Instruction|Instruction[],wallet=this.options.wallet){
+ async send(instruction:Instruction|Instruction[],wallet=this.options.wallet,onSigned?:(submission:{signature:string;blockhash:string;lastValidBlockHeight:string})=>Promise<void>){
   if(!wallet)throw Error('Connect your wallet');
   const latest=(await this.rpc.getLatestBlockhash({commitment:'confirmed'}).send()).value;
   const message=appendTransactionMessageInstructions(Array.isArray(instruction)?instruction:[instruction],setTransactionMessageLifetimeUsingBlockhash(latest,setTransactionMessageFeePayer(address(wallet.address),createTransactionMessage({version:0}))));
@@ -88,18 +129,25 @@ export class SolanaQVRFClient {
   const signed=await wallet.signTransaction(wire);const decoded=getTransactionDecoder().decode(signed);
   if(hex(new Uint8Array(decoded.messageBytes))!==hex(new Uint8Array(compiled.messageBytes)))throw Error('Wallet changed the prepared request');
   if(hex(new Uint8Array(getTransactionEncoder().encode(decoded)))!==hex(signed))throw Error('Transaction codec changed the signed bytes');
+  const payerSignature=decoded.signatures[address(wallet.address)];
+  if(!payerSignature||payerSignature.length!==64||!payerSignature.some(value=>value!==0))throw Error('Wallet did not sign the prepared request');
+  const preparedSignature=getBase58Decoder().decode(payerSignature);
+  // The caller must durably persist this signature and lifetime BEFORE any broadcast.
+  await onSigned?.({signature:preparedSignature,blockhash:String(latest.blockhash),lastValidBlockHeight:String(latest.lastValidBlockHeight)});
   const signature=await this.rpc.sendTransaction(getBase64EncodedWireTransaction(decoded),{encoding:'base64',skipPreflight:false,preflightCommitment:'confirmed'}).send();
+  if(String(signature)!==preparedSignature)throw Error('RPC returned another submission signature');
   const deadline=Date.now()+90000;
   while(Date.now()<deadline){const status=(await this.rpc.getSignatureStatuses([signature],{searchTransactionHistory:true}).send()).value[0];if(status?.err)throw Error(`Transaction failed: ${JSON.stringify(status.err)}`);if(status&&['confirmed','finalized'].includes(status.confirmationStatus??''))return String(signature);if(await this.rpc.getBlockHeight({commitment:'confirmed'}).send()>latest.lastValidBlockHeight)throw Error(`Transaction expired; inspect ${signature} before another request`);await new Promise(resolve=>setTimeout(resolve,500));}
   throw Error(`Confirmation pending: ${signature}; reopen without resubmitting`);
  }
- async request(input:ProtocolInput,options:{expectedFee?:bigint}={}){
+ async request(input:ProtocolInput,options:{expectedFee?:bigint;checkpoint?:(checkpoint:RecoveryCheckpoint)=>Promise<void>}={}){
+  input=JSON.parse(JSON.stringify(input)) as ProtocolInput; // Snapshot before the first await.
   if(input.bytes!==32)throw Error('Request 32 bytes');await mapOutput('00'.repeat(32),input.mapping);
   const c=await this.config();if(c.used>=c.slots)throw Error('No committed capacity');const wallet=this.options.wallet;if(!wallet)throw Error('Connect your wallet');
   if(await this.networkId()==='5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d'&&!this.options.quoteUrl)throw Error('Configure the service quote URL for mainnet requests');
   const q=await this.serviceQuote(wallet.address,c.next),fee=q?BigInt(q.amount):c.fee;
   if(options.expectedFee!==undefined&&fee!==options.expectedFee)throw Error('Service price changed; review the refreshed quote before signing');
-  const fixedInput:ProtocolInput=q?{bytes:input.bytes,mapping:input.mapping,serviceQuote:q.id}:input;
+  const fixedInput:ProtocolInput=immutable(q?{bytes:input.bytes,mapping:input.mapping,serviceQuote:q.id}:input);
   const encoded=enc.encode(JSON.stringify(fixedInput));if(encoded.length>512)throw Error('Use application rules under 512 bytes');
   const key=await this.requestAddress(c.next),R=AccountRole;
   const eventMode=this.options.requestStorage!=='legacy';
@@ -108,8 +156,47 @@ export class SolanaQVRFClient {
   const proof:Instruction=eventMode?{programAddress:this.program,accounts:[meta(wallet.address,R.READONLY_SIGNER),meta(await this.configAddress(),R.WRITABLE),meta(await this.streamAddress(),R.WRITABLE),meta(key,R.READONLY)],data:await instructionData('request_event',u64(c.next),u32(encoded.length),encoded,contribution,u64(fee),bytes(c.root))}:{programAddress:this.program,accounts:[meta(wallet.address,R.WRITABLE_SIGNER),meta(await this.configAddress(),R.WRITABLE),meta(key,R.WRITABLE),meta(SYSTEM_PROGRAM,R.READONLY)],data:getRequestInstructionDataEncoder().encode({sequence:c.next,inputs:encoded,userContribution:contribution,quotedFee:fee,quotedRoot:bytes(c.root)})};
   // Standard SOL payment and indexed identity share one user signature; the
   // identity is read-only in event mode and never creates a per-draw account.
-  const signature=await this.send([solTransfer(wallet.address,c.recipient,fee),memoInstruction(paymentMemo(key)),proof]);
-  const r=await this.getRequest(c.next);r.requestTx=signature;return r;
+  let checkpoint:RecoveryCheckpoint|undefined,broadcastAttempted=false;
+  try {
+   const signature=await this.send([solTransfer(wallet.address,c.recipient,fee),memoInstruction(paymentMemo(key)),proof],wallet,async submission=>{
+    const network=await this.networkId();
+    checkpoint=await parseRecoveryCheckpoint(JSON.stringify({version:1,id:`solana:${network}:${this.program}:${c.next}`,
+     network,program:this.program,sequence:String(c.next),requestAddress:key,requester:wallet.address,input:fixedInput,
+     inputDigest:hex(await hash(encoded)),userContribution:hex(contribution),providerCommitment:c.root,
+     recipient:c.recipient,feeQuoted:String(fee),storage:eventMode?'events':'account',...submission}));
+    await options.checkpoint?.(checkpoint);
+    broadcastAttempted=true;
+   });
+   const r=await this.getRequest(c.next);r.requestTx=signature;return r;
+  } catch(cause) {
+   if(checkpoint)throw new RecoverableRequestError(broadcastAttempted?'Request outcome uncertain; recover the saved draw without resubmitting':'Checkpoint persistence failed; transaction was not broadcast',checkpoint,broadcastAttempted,cause);
+   throw cause;
+  }
+ }
+ /** Wallet-free single inspection. Never quotes, signs, sends, expires or retries a payment. */
+ async recoverRequest(saved:RecoveryCheckpoint):Promise<RecoveryResult> {
+  const checkpoint=await parseRecoveryCheckpoint(JSON.stringify(saved));
+  if(checkpoint.network!==await this.networkId()||checkpoint.program!==this.program||checkpoint.requestAddress!==await this.requestAddress(BigInt(checkpoint.sequence)))throw Error('Recovery network, program or request mismatch');
+  const status=(await this.rpc.getSignatureStatuses([checkpoint.signature as any],{searchTransactionHistory:true}).send()).value[0];
+  if(status?.err)return {state:'failed',scope:'submission',checkpoint,reason:'Saved transaction failed; no resubmission was attempted'};
+  let record:ProtocolRecord;
+  try { record=await this.getRequest(checkpoint.id); }
+  catch(error) {
+   if(!(error instanceof RequestUnavailableError))throw error;
+   const expired=await this.rpc.getBlockHeight({commitment:'confirmed'}).send()>BigInt(checkpoint.lastValidBlockHeight);
+   return {state:expired&&!status?'expired':'pending',scope:'submission',checkpoint,
+    reason:expired&&!status?'Submission lifetime elapsed; RPC has no request proof. This is not proof that another payment is safe':'Request not yet available from this RPC; inspect again without resubmitting'};
+  }
+  for(const [field,expected] of Object.entries({id:checkpoint.id,network:checkpoint.network,contract:checkpoint.program,
+   sequence:checkpoint.sequence,requestAddress:checkpoint.requestAddress,requester:checkpoint.requester,inputDigest:checkpoint.inputDigest,
+   userContribution:checkpoint.userContribution,providerCommitment:checkpoint.providerCommitment,recipient:checkpoint.recipient,
+   feeQuoted:checkpoint.feeQuoted,requestTx:checkpoint.signature,storage:checkpoint.storage})){
+   if(record[field as keyof ProtocolRecord]!==expected)throw Error('Recovered '+field+' binding changed');
+  }
+  if(JSON.stringify(record.input)!==JSON.stringify(checkpoint.input))throw Error('Recovered fixed input changed');
+  if(!record.paymentVerified) return {state:'pending',scope:'request',checkpoint,record,reason:'Request found; saved payment has not been verified by this RPC'};
+  if(record.state==='fulfilled')await verifyProtocolRecord(record);
+  return {state:record.state==='requested'?'pending':record.state,scope:'request',checkpoint,record};
  }
  private async sequence(value:bigint|string){if(typeof value==='string')value=decodeURIComponent(value);if(typeof value==='string'&&value.includes(':')){const [prefix,network,program,seq,...rest]=value.split(':');if(prefix!=='solana'||rest.length||network!==await this.networkId()||program!==this.program||!/^\d+$/.test(seq??''))throw Error('Request belongs to another network or program');return BigInt(seq!);}return BigInt(value);}
  async getRequest(value:bigint|string):Promise<ProtocolRecord>{
@@ -176,7 +263,7 @@ export class SolanaQVRFClient {
     }
    }
   }
-  if(!record||!requestTx||requestSlot===undefined)throw Error('Historical request proof unavailable from this RPC; use an archive-capable RPC or saved proof');
+  if(!record||!requestTx||requestSlot===undefined)throw new RequestUnavailableError('Historical request proof unavailable from this RPC; use an archive-capable RPC or saved proof');
   return {record,requestTx,revealTx,requestSlot};
  }
  async verify(record:ProtocolRecord){await verifyProtocolRecord(record);const actual=await this.getRequest(record.id);for(const field of ['id','network','contract','sequence','createdAt','requester','feePaid','feeQuoted','paymentVerified','recipient','userContribution','providerCommitment','numHashes','providerContribution','inputDigest','outputBytes','state','delivery','requestAddress','callbackProgram','callbackAccount'] as const)if(record[field]!==actual[field])throw Error(`Onchain ${field} mismatch`);if(JSON.stringify(record.mapping)!==JSON.stringify(actual.mapping))throw Error('Application result mismatch');return true;}

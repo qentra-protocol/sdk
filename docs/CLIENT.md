@@ -85,3 +85,7 @@ Use caller-owned durable storage. The SDK returns records but does not automatic
 # Offline proof files
 
 Use `exportProofFile(result)` after fulfillment and `parseProofFile(json)` to reopen a received file. Both run the existing verifier before returning. `verifyProofFile(record)` returns an `offline-content-integrity` summary without trusting persisted status flags. The installed `qentra-proof verify <proof.json>` command prints the recorded ID and reproduced mapping, or exits nonzero on failure. It never creates a client or calls a wallet/RPC. See [proof files](PROOF_FILES.md) for the complete organizer/recipient journey and chain-backed comparison boundary.
+
+## Interrupted draws
+
+Save a typed checkpoint before broadcast and reopen the same draw from a wallet-free process: [recovery guide](RECOVERY.md). Recovery is read-only; it never resubmits a payment.
