@@ -81,3 +81,7 @@ const unsubscribe = client.subscribe(savedId, record => {
 ```
 
 Use caller-owned durable storage. The SDK returns records but does not automatically persist schema-4 data. Catch wait/confirmation errors and retain identity/signature before closing the application. When archived RPC data is missing, keep the saved proof and use an archive-capable endpoint for chain comparison.
+
+# Offline proof files
+
+Use `exportProofFile(result)` after fulfillment and `parseProofFile(json)` to reopen a received file. Both run the existing verifier before returning. `verifyProofFile(record)` returns an `offline-content-integrity` summary without trusting persisted status flags. The installed `qentra-proof verify <proof.json>` command prints the recorded ID and reproduced mapping, or exits nonzero on failure. It never creates a client or calls a wallet/RPC. See [proof files](PROOF_FILES.md) for the complete organizer/recipient journey and chain-backed comparison boundary.

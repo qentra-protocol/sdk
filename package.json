@@ -21,13 +21,18 @@
       "types": "./dist/browser.d.ts",
       "import": "./dist/browser.js"
     },
-    "./idl": "./idl/qentra.json"
+    "./idl": "./idl/qentra.json",
+    "./proof": {
+      "types": "./dist/proof.d.ts",
+      "import": "./dist/proof.js"
+    }
   },
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "idl",
-    "README.md"
+    "README.md",
+    "docs/PROOF_FILES.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -51,5 +56,8 @@
   "dependencies": {
     "@solana/kit": "8.4.0",
     "@solana/program-client-core": "8.4.0"
+  },
+  "bin": {
+    "qentra-proof": "./dist/cli.js"
   }
 }

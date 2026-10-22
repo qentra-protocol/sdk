@@ -1,6 +1,7 @@
 import pathlib,subprocess,os,json,hashlib,tarfile,shutil
 root=pathlib.Path.cwd();work=root/'.package-proof';work.mkdir(exist_ok=True)
-receipt={'status':'running','revision':os.environ.get('GITHUB_SHA'),'run_url':'https://github.com/'+os.environ.get('GITHUB_REPOSITORY','')+'/actions/runs/'+os.environ.get('GITHUB_RUN_ID',''),'checks':[],'artifacts':[],'scope':'synthetic packaged consumer; no live funds or validator'}
+source_receipt=json.loads((root.parent/'ACQUISITION.json').read_text())
+receipt={'status':'running','revision':source_receipt['candidate'],'workflow_revision':os.environ.get('GITHUB_SHA'),'acquisition':source_receipt,'run_url':'https://github.com/'+os.environ.get('GITHUB_REPOSITORY','')+'/actions/runs/'+os.environ.get('GITHUB_RUN_ID',''),'checks':[],'artifacts':[],'scope':'synthetic packaged consumer; no live funds or validator'}
 def save(): (root/'package-proof.json').write_text(json.dumps(receipt,indent=2)+'\n')
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def run(name,args,cwd):
@@ -19,18 +20,22 @@ try:
    assert not m.issym() and not m.islnk() and not pathlib.PurePosixPath(m.name).is_absolute() and '..' not in pathlib.PurePosixPath(m.name).parts
   t.extractall(core,filter='data')
  receipt['core_source_sha256']=sha(core/'src/index.ts');receipt['core_courier_sha256']=sha(archive);receipt['credential_environment_absent']=True;save()
- run('core install',['npm','install','--no-audit','--no-fund'],core)
+ run('core install',['npm','install','--ignore-scripts','--no-audit','--no-fund'],core)
  run('core checks',['npm','run','check'],core)
- run('core pack',['npm','pack'],core)
+ run('core pack',['npm','pack','--ignore-scripts'],core)
  coretar=core/'qentra-core-0.1.0-dev.0.tgz'
- run('sdk install',['npm','install','--no-save','--no-audit','--no-fund',str(coretar)],root)
+ run('sdk install',['npm','install','--ignore-scripts','--no-save','--no-audit','--no-fund',str(coretar)],root)
  run('sdk checks',['npm','run','check'],root)
- run('sdk pack',['npm','pack'],root)
+ run('sdk pack',['npm','pack','--ignore-scripts'],root)
  sdktar=root/'qentra-sdk-0.2.0-dev.0.tgz'
  consumer=work/'consumer';consumer.mkdir(exist_ok=True);(consumer/'package.json').write_text('{"private":true,"type":"module"}\n')
  shutil.copyfile(root/'examples/packed-consumer.mjs',consumer/'packed-consumer.mjs')
- run('fresh consumer install',['npm','install','--no-audit','--no-fund',str(coretar),str(sdktar)],consumer)
+ run('fresh consumer install',['npm','install','--ignore-scripts','--no-audit','--no-fund',str(coretar),str(sdktar)],consumer)
  run('fresh packed consumer',['node','packed-consumer.mjs'],consumer)
+ shutil.copyfile(root/'examples/offline-proof-consumer.mjs',consumer/'offline-proof-consumer.mjs')
+ run('installed offline proof-file CLI consumer',['node','offline-proof-consumer.mjs'],consumer)
+ (consumer/'proof-types.ts').write_text("import { parseProofFile, exportProofFile, verifyProofFile, type ProtocolRecord, type OfflineProofVerification } from '@qentra/sdk';\nimport { parseProofFile as subpath } from '@qentra/sdk/proof';\nasync function journey(text: string) { const r: ProtocolRecord = await parseProofFile(text); const json: string = await exportProofFile(r); const v: OfflineProofVerification = await verifyProofFile(await subpath(json)); return v.mapping.result; }\n")
+ run('installed proof-file declarations',['node',str(root/'node_modules/typescript/bin/tsc'),'--noEmit','--strict','--skipLibCheck','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','proof-types.ts'],consumer)
  for p in [coretar,sdktar,core/'package-lock.json',consumer/'package-lock.json']:
   receipt['artifacts'].append({'path':str(p.relative_to(root)),'sha256':sha(p)})
  shutil.copyfile(coretar,root/coretar.name)
