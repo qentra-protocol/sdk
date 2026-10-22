@@ -69,7 +69,7 @@ if(phase==='start'||phase==='persistence-failure'){
  const states={};for(const state of ['pending','missing','failed','expired','request-expired']){mode=state;const r=await c.recoverRequest(saved);states[state]={state:r.state,scope:r.scope};assert.equal(r.state,state==='missing'?'pending':state==='request-expired'?'expired':state);}
  mode='fulfilled';
  for(const patch of [{network:program,id:`solana:${program}:${program}:2`},{program:SYSTEM_PROGRAM,id:`solana:${network}:${SYSTEM_PROGRAM}:2`},{requestAddress:program},{sequence:'3',id:`solana:${network}:${program}:3`},{input:{...saved.input,mapping:{...saved.input.mapping,items:['Other','Birch','Cedar']}}},{requester:program},{signature:reveal}])await assert.rejects(()=>c.recoverRequest({...saved,...patch}));
- const changedInput={...saved.input,mapping:{...saved.input.mapping,items:['Other','Birch','Cedar']}};await assert.rejects(()=>c.recoverRequest({...saved,input:changedInput,inputDigest:hex(await hash(enc.encode(JSON.stringify(changedInput))))}),/binding changed/);
+ const changedInput={...saved.input,mapping:{...saved.input.mapping,items:['Other','Birch','Cedar']}};const changedDigest=hex(await hash(enc.encode(JSON.stringify(changedInput))));await assert.rejects(()=>c.recoverRequest({...saved,input:changedInput,inputDigest:changedDigest}),/binding changed/);
  assert.deepEqual(counts,{signs:0,sends:0,quotes:0});
  await atomic('recovery-receipt.json',{freshProcess:true,walletAbsent:true,...counts,sameDraw:saved.id,sameSignature:saved.signature,paymentVerified:true,proofVerified:true,mapping:offline.mapping,states,bindingRejections:8});
 }else{
