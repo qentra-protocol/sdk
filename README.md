@@ -29,3 +29,5 @@ Save a typed checkpoint before broadcast and reopen the same draw from a wallet-
 ## Weighted allocation and agent choices
 
 [Run the complete saved allocation recipe](docs/ALLOCATION.md): fix ordered applicants and weights before signing, recover without a wallet, and export/read back the verified application decision. The packed example uses the existing mapping and proof APIs; execution and settlement stay with the caller.
+
+Read [bounded saved-draw waits](docs/WAITING.md) for cancellation, total deadlines and wallet-free reopening.

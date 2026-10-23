@@ -269,7 +269,47 @@ export class SolanaQVRFClient {
  async verify(record:ProtocolRecord){await verifyProtocolRecord(record);const actual=await this.getRequest(record.id);for(const field of ['id','network','contract','sequence','createdAt','requester','feePaid','feeQuoted','paymentVerified','recipient','userContribution','providerCommitment','numHashes','providerContribution','inputDigest','outputBytes','state','delivery','requestAddress','callbackProgram','callbackAccount'] as const)if(record[field]!==actual[field])throw Error(`Onchain ${field} mismatch`);if(JSON.stringify(record.mapping)!==JSON.stringify(actual.mapping))throw Error('Application result mismatch');return true;}
  async listRequests(){const c=await this.config();const out:ProtocolRecord[]=[];for(let seq=c.next-1n;seq>=1n&&out.length<64;seq--)out.push(await this.getRequest(seq));return out;}
  subscribe(value:bigint|string,onUpdate:(record:ProtocolRecord)=>void){let stopped=false,timer:ReturnType<typeof setTimeout>;const poll=async()=>{try{const r=await this.getRequest(value);if(!stopped)onUpdate(r);}finally{if(!stopped)timer=setTimeout(()=>{void poll().catch(()=>{});},1500);}};void poll().catch(()=>{});return()=>{stopped=true;clearTimeout(timer);};}
- async waitForResult(value:bigint|string,options:{timeoutMs?:number;signal?:AbortSignal}={}){const deadline=Date.now()+(options.timeoutMs??120000);while(Date.now()<deadline){if(options.signal?.aborted)throw Error('Wait aborted');const r=await this.getRequest(value);if(r.state==='fulfilled')return r;if(r.state==='expired')throw Error('Request expired; refund status is in the payment receipt');await new Promise(resolve=>setTimeout(resolve,1000));}throw Error('Request pending; reopen its ID without another payment');}
+ /** Stop only this local read wait; the saved onchain draw remains reopenable. */
+ async waitForResult(value:bigint|string,options:{timeoutMs?:number;signal?:AbortSignal}={}):Promise<ProtocolRecord>{
+  const deadline=Date.now()+(options.timeoutMs??120000),signal=options.signal;
+  return new Promise((resolve,reject)=>{
+   let done=false,pollTimer:ReturnType<typeof setTimeout>|undefined,deadlineTimer:ReturnType<typeof setTimeout>|undefined;
+   const finish=(record:ProtocolRecord|undefined,error?:unknown)=>{
+    if(done)return;done=true;clearTimeout(pollTimer);clearTimeout(deadlineTimer);
+    signal?.removeEventListener('abort',abort);
+    record?resolve(record):reject(error);
+   };
+   const abort=()=>finish(undefined,Error('Wait aborted'));
+   const pending=()=>finish(undefined,Error(`Request pending; reopen its ID ${String(value)} without another payment`));
+   const stopped=()=>{
+    if(done)return true;
+    if(signal?.aborted){abort();return true;}
+    if(!(Date.now()<deadline)){pending();return true;}
+    return false;
+   };
+   const expire=()=>{
+    if(stopped())return;
+    // Re-arm long deadlines rather than overflowing the platform timer range.
+    if(Number.isFinite(deadline))deadlineTimer=setTimeout(expire,Math.min(deadline-Date.now(),2147483647));
+   };
+   const poll=async()=>{
+    if(stopped())return;
+    try{
+     // Bound the caller even when the transport never settles. Late reads are
+     // observed here but cannot settle the wait or schedule another poll.
+     const record=await this.getRequest(value);
+     if(stopped())return;
+     if(record.state==='fulfilled'){finish(record);return;}
+     if(record.state==='expired'){finish(undefined,Error('Request expired; refund status is in the payment receipt'));return;}
+     pollTimer=setTimeout(()=>{void poll();},1000);
+    }catch(error){if(!stopped())finish(undefined,error);}
+   };
+   if(stopped())return;
+   signal?.addEventListener('abort',abort,{once:true});
+   expire();void poll();
+  });
+ }
+
  // Receipt check: confirmed successful transaction, exact transfer, signer and memo.
  async verifyTransfer(signature:string,from:string,to:string,amount:bigint,memo:string,requestAddress?:string){
   const tx:any=await this.rpc.getTransaction(signature as any,{encoding:'jsonParsed',maxSupportedTransactionVersion:0,commitment:'confirmed'}).send();

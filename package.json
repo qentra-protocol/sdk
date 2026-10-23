@@ -36,7 +36,9 @@
     "docs/RECOVERY.md",
     "examples/interrupted-draw.mjs",
     "examples/allocation-draw.mjs",
-    "docs/ALLOCATION.md"
+    "docs/ALLOCATION.md",
+    "examples/wait-and-reopen.mjs",
+    "docs/WAITING.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
