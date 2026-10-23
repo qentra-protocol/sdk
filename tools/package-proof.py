@@ -37,6 +37,15 @@ try:
  shutil.copyfile(root/'examples/recovery-consumer.mjs',consumer/'recovery-consumer.mjs')
  run('installed interrupted draw fresh-process recovery',['node','recovery-consumer.mjs'],consumer)
  receipt['interrupted_draw']=json.loads((consumer/'interrupted-draw-receipt.json').read_text());save()
+ installed_recipe=consumer/'node_modules/@qentra/sdk/examples/allocation-draw.mjs'
+ assert installed_recipe.read_bytes()==(root/'examples/allocation-draw.mjs').read_bytes(),'packed recipe differs from complete source'
+ receipt['installed_recipe']={'path':'node_modules/@qentra/sdk/examples/allocation-draw.mjs','sha256':sha(installed_recipe),'bytes':installed_recipe.stat().st_size};save()
+ allocation=consumer/'allocation';allocation.mkdir(exist_ok=True)
+ shutil.copyfile(root/'examples/allocation-consumer.mjs',allocation/'allocation-consumer.mjs')
+ # Resolve packed recipe via the consumer's installed node_modules, never source imports.
+ shutil.copytree(consumer/'node_modules',allocation/'node_modules',symlinks=True)
+ run('installed allocation recipe fresh-process recovery',['node','allocation-consumer.mjs'],allocation)
+ receipt['allocation_recipe']=json.loads((allocation/'allocation-receipt.json').read_text());save()
  (consumer/'proof-types.ts').write_text("import { parseProofFile, exportProofFile, verifyProofFile, type ProtocolRecord, type OfflineProofVerification } from '@qentra/sdk';\nimport { parseProofFile as subpath } from '@qentra/sdk/proof';\nasync function journey(text: string) { const r: ProtocolRecord = await parseProofFile(text); const json: string = await exportProofFile(r); const v: OfflineProofVerification = await verifyProofFile(await subpath(json)); return v.mapping.result; }\nimport { QVRFClient, parseRecoveryCheckpoint, type RecoveryCheckpoint, type RecoveryResult } from '@qentra/sdk';\nasync function recover(client: QVRFClient, text: string) { const c: RecoveryCheckpoint = await parseRecoveryCheckpoint(text); const r: RecoveryResult = await client.recoverRequest(c); return r.state; }\n")
  run('installed proof-file declarations',['node',str(root/'node_modules/typescript/bin/tsc'),'--noEmit','--strict','--skipLibCheck','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','proof-types.ts'],consumer)
  for p in [coretar,sdktar,core/'package-lock.json',consumer/'package-lock.json']:

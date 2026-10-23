@@ -34,7 +34,9 @@
     "README.md",
     "docs/PROOF_FILES.md",
     "docs/RECOVERY.md",
-    "examples/interrupted-draw.mjs"
+    "examples/interrupted-draw.mjs",
+    "examples/allocation-draw.mjs",
+    "docs/ALLOCATION.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

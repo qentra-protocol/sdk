@@ -25,3 +25,7 @@ The command checks local content integrity and prints the recorded identity and 
 ## Interrupted draws
 
 Save a typed checkpoint before broadcast and reopen the same draw from a wallet-free process: [recovery guide](docs/RECOVERY.md). Recovery is read-only; it never resubmits a payment.
+
+## Weighted allocation and agent choices
+
+[Run the complete saved allocation recipe](docs/ALLOCATION.md): fix ordered applicants and weights before signing, recover without a wallet, and export/read back the verified application decision. The packed example uses the existing mapping and proof APIs; execution and settlement stay with the caller.
