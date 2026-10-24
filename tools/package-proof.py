@@ -12,7 +12,7 @@ try:
  assert not any(os.environ.get(k) for k in ['GH_TOKEN','GITHUB_TOKEN','NODE_AUTH_TOKEN','NPM_TOKEN','HTTPS_PROXY','https_proxy','HTTP_PROXY','http_proxy','AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY']),'credential-bearing environment'
  assert not (pathlib.Path.home()/'.npmrc').exists() and not (pathlib.Path.home()/'.netrc').exists(),'credential file'
  archive=root/'tests/fixtures/core-source.tgz'
- assert sha(archive)=='f484a43d595afecef0b45f9a372ebc376cb339399a1f8644afdf39b1012064f6','core courier changed'
+ assert sha(archive)=='4b295cdb34ea38847cbcd655d6b2fabec629b7424f756ba19a7eec0fc1127d91','core courier changed'
  core=work/'core';core.mkdir(exist_ok=True)
  with tarfile.open(archive) as t:
   for m in t.getmembers():
@@ -23,14 +23,21 @@ try:
  run('core install',['npm','install','--ignore-scripts','--no-audit','--no-fund'],core)
  run('core checks',['npm','run','check'],core)
  run('core pack',['npm','pack','--ignore-scripts'],core)
- coretar=core/'qentra-core-0.1.0-dev.0.tgz'
+ coretar=core/'qentra-core-0.2.0-dev.0.tgz'
+ coreonly=work/'core-only';coreonly.mkdir(exist_ok=True);(coreonly/'package.json').write_text('{"private":true,"type":"module"}\n')
+ shutil.copyfile(root/'examples/core-proof-consumer.mjs',coreonly/'core-proof-consumer.mjs')
+ run('core-only fresh install',['npm','install','--ignore-scripts','--no-audit','--no-fund',str(coretar)],coreonly)
+ run('installed core-only saved proof recipient',['node','core-proof-consumer.mjs'],coreonly)
+ receipt['core_only_proof']=json.loads((coreonly/'core-proof-receipt.json').read_text());save()
  run('sdk install',['npm','install','--ignore-scripts','--no-save','--no-audit','--no-fund',str(coretar)],root)
  run('sdk checks',['npm','run','check'],root)
  run('sdk pack',['npm','pack','--ignore-scripts'],root)
- sdktar=root/'qentra-sdk-0.2.0-dev.0.tgz'
+ sdktar=root/'qentra-sdk-0.3.0-dev.0.tgz'
  consumer=work/'consumer';consumer.mkdir(exist_ok=True);(consumer/'package.json').write_text('{"private":true,"type":"module"}\n')
  shutil.copyfile(root/'examples/packed-consumer.mjs',consumer/'packed-consumer.mjs')
  run('fresh consumer install',['npm','install','--ignore-scripts','--no-audit','--no-fund',str(coretar),str(sdktar)],consumer)
+ shutil.copyfile(root/'examples/shared-proof-consumer.mjs',consumer/'shared-proof-consumer.mjs')
+ run('installed shared function identity',['node','shared-proof-consumer.mjs'],consumer)
  run('fresh packed consumer',['node','packed-consumer.mjs'],consumer)
  shutil.copyfile(root/'examples/offline-proof-consumer.mjs',consumer/'offline-proof-consumer.mjs')
  run('installed offline proof-file CLI consumer',['node','offline-proof-consumer.mjs'],consumer)

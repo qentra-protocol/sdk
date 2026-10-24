@@ -5,7 +5,7 @@ A tournament organizer or allocation developer can export a fulfilled schema-4 d
 Install the reviewed core and SDK tarballs together with Node 22+:
 
 ```sh
-npm install /path/to/qentra-core-0.1.0-dev.0.tgz /path/to/qentra-sdk-0.2.0-dev.0.tgz
+npm install /path/to/qentra-core-0.2.0-dev.0.tgz /path/to/qentra-sdk-0.3.0-dev.0.tgz
 ```
 
 ## Organizer: save the fulfilled draw
@@ -50,3 +50,7 @@ Offline verification establishes internal content integrity: the fixed inputs ha
 For chain-backed comparison use an explicitly constructed `QVRFClient` with a chosen RPC and `await client.verify(record)`. That separate read-only operation reopens the record from RPC; it is not part of the offline command. Preserve original transaction links and trusted chain references when sharing proofs.
 
 The [installed consumer](../examples/offline-proof-consumer.mjs) exercises tournament, shuffled allocation and weighted-selection files, changed winners/inputs/reveals/outputs, malformed files and the actual packaged bin. Its data is synthetic; it makes no live draw or payment.
+
+## Shared core implementation
+
+The SDK root and proof subpath reexport proof-file APIs from `@qentra/core` `0.2.0-dev.0`. `verifyProtocolRecord` and `ProtocolInput` / `ProtocolRecord` also come from core; wallet/RPC transport and recovery remain in the SDK. Recipients can install core alone to check exported fulfilled schema4 draws. See [core proof module guide](https://github.com/nicpilsner/qentra-core/blob/main/docs/PROTOCOL_PROOFS.md).

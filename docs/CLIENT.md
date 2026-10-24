@@ -5,7 +5,7 @@ Use Node 22+, an explicit RPC endpoint, Qentra's current quote endpoint and a wa
 Install the reviewed core and SDK tarballs together:
 
 ```sh
-npm install /path/to/qentra-core-0.1.0-dev.0.tgz /path/to/qentra-sdk-0.2.0-dev.0.tgz
+npm install /path/to/qentra-core-0.2.0-dev.0.tgz /path/to/qentra-sdk-0.3.0-dev.0.tgz
 ```
 
 ```ts
@@ -36,7 +36,7 @@ Save the ID before waiting. A timeout means reopen this ID, not create/pay anoth
 
 For an allocation, fix `mapping: { kind: 'shuffle', items: ['Amber', 'Birch', 'Cedar'] }` before payment. For sampling, use `pickUnique` with a fixed count; for weighted selection use `weightedPick` with fixed weights. Rules, labels and quote identity are included in the input digest; do not remap after the reveal.
 
-# SDK API · 0.2.0-dev.0
+# SDK API · 0.3.0-dev.0
 
 `QVRFClient` and `OnchainQVRFClient` alias `SolanaQVRFClient`.
 
