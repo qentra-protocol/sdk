@@ -8,7 +8,7 @@ Use Node 22+ and the reviewed core/SDK tarballs. From an empty directory:
 
 ```sh
 npm init -y
-npm install --ignore-scripts /path/to/qentra-core-0.1.0-dev.0.tgz /path/to/qentra-sdk-0.2.0-dev.0.tgz
+npm install --ignore-scripts /path/to/qentra-core-0.2.0-dev.0.tgz /path/to/qentra-sdk-0.3.0-dev.0.tgz
 cp node_modules/@qentra/sdk/examples/allocation-draw.mjs ./allocation-draw.mjs
 ```
 

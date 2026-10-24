@@ -4,9 +4,9 @@ Randomness infrastructure for the quantum era: native Solana requests and checka
 
 The primary `QVRFClient` is `SolanaQVRFClient`. An external wallet signs one ordinary-SOL transfer + indexed memo + proof-request transaction. Service-issued persisted quotes bind fixed rules; default shared-workspace draws have no per-draw rent. The SDK waits for checked reveal, verifies deterministic mapping, and reopens historical event or account proofs.
 
-Program: `CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d`. [Mainnet program](https://explorer.solana.com/address/CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d) · [Developer guide](https://github.com/nicpilsner/qentra-docs) · [Core/helpers](https://github.com/nicpilsner/project-repo).
+Program: `CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d`. [Mainnet program](https://explorer.solana.com/address/CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d) · [Developer guide](https://github.com/nicpilsner/qentra-docs) · [Core/helpers](https://github.com/nicpilsner/qentra-core).
 
-Use Node 22+ and reviewed local core/SDK tarballs. Version `0.2.0-dev.0` requires core peer `0.1.0-dev.0`; no npm publication is implied. See [client guide](docs/CLIENT.md), [native recipe](examples/native-draw.ts) and [packed consumer fixture](examples/packed-consumer.mjs).
+Use Node 22+ and reviewed local core/SDK tarballs. Version `0.3.0-dev.0` requires core peer `0.2.0-dev.0`; no npm publication is implied. See [client guide](docs/CLIENT.md), [native recipe](examples/native-draw.ts) and [packed consumer fixture](examples/packed-consumer.mjs).
 
 Exports: root client/types/mapping, `./solana` native primitives, `./generated` IDL codecs, `./idl` JSON interface, `./browser` retained historical source mode. Native records use schema 4; browser records use schema 1.
 
@@ -31,3 +31,7 @@ Save a typed checkpoint before broadcast and reopen the same draw from a wallet-
 [Run the complete saved allocation recipe](docs/ALLOCATION.md): fix ordered applicants and weights before signing, recover without a wallet, and export/read back the verified application decision. The packed example uses the existing mapping and proof APIs; execution and settlement stay with the caller.
 
 Read [bounded saved-draw waits](docs/WAITING.md) for cancellation, total deadlines and wallet-free reopening.
+
+## Portable core proofs
+
+SDK `0.3.0-dev.0` consumes `@qentra/core` `0.2.0-dev.0` for shared protocol types, record verification and proof-file APIs. Existing SDK imports remain compatible. A tournament recipient can verify the exported fulfilled draw with core alone, without a wallet or RPC. [Shared module and saved-file example](https://github.com/nicpilsner/qentra-core/blob/main/docs/PROTOCOL_PROOFS.md).

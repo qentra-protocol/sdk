@@ -1,6 +1,6 @@
 {
   "name": "@qentra/sdk",
-  "version": "0.2.0-dev.0",
+  "version": "0.3.0-dev.0",
   "private": true,
   "type": "module",
   "description": "Qentra Protocol native Solana requests, generated codecs and checkable draw proofs",
@@ -57,7 +57,7 @@
     "@types/node": "22.18.6"
   },
   "peerDependencies": {
-    "@qentra/core": "0.1.0-dev.0"
+    "@qentra/core": "0.2.0-dev.0"
   },
   "dependencies": {
     "@solana/kit": "8.4.0",

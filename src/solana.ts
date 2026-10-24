@@ -30,13 +30,10 @@ export async function instructionData(name:string,...args:Uint8Array[]){return j
 export const meta=(value:string,role:AccountRole)=>({address:address(value),role});
 export { AccountRole };
 export type SolanaWallet={address:string;signTransaction:(wire:Uint8Array)=>Promise<Uint8Array>};
-export type ProtocolInput={bytes:32;mapping:MappingConfig;serviceQuote?:string};
-export type ProtocolRecord={schemaVersion:4;id:string;network:string;contract:string;sequence:string;createdAt:string;
- input:ProtocolInput;inputDigest:string;state:'requested'|'fulfilled'|'expired';verification:'pending'|'verified';
- delivery:'not-requested'|'pending'|'delivered'|'failed';requester:string;feePaid:string;feeQuoted:string;paymentVerified:boolean;recipient:string;userContribution:string;
- providerCommitment:string;numHashes:number;providerContribution?:string|undefined;outputBytes?:string|undefined;
- mapping?:Mapping|undefined;commitmentTx?:string|undefined;requestTx?:string|undefined;revealTx?:string|undefined;deliveryTx?:string|undefined;
- storage?:'events'|'account';requestAddress:string;callbackProgram:string;callbackAccount:string};
+import type { ProtocolInput, ProtocolRecord } from '@qentra/core';
+export type { ProtocolInput, ProtocolRecord } from '@qentra/core';
+import { verifyProtocolRecord } from '@qentra/core';
+export { verifyProtocolRecord } from '@qentra/core';
 /** Prepared and signed, not evidence of broadcast, payment or confirmation. No wire bytes or keys. */
 export type RecoveryCheckpoint = Readonly<{
  version: 1; id: string; network: string; program: string; sequence: string; requestAddress: string;
@@ -78,17 +75,6 @@ export async function parseRecoveryCheckpoint(text:string):Promise<RecoveryCheck
   providerCommitment,recipient,feeQuoted,storage,signature,blockhash,lastValidBlockHeight});
 }
 export type Config={controller:string;operator:string;recipient:string;fee:bigint;refundSeconds:bigint;next:bigint;root:string;slots:number;used:number;pending:number;batchFirst:bigint;bump:number};
-export async function verifyProtocolRecord(r:ProtocolRecord){
- if(r.schemaVersion!==4||r.input.bytes!==32||r.state!=='fulfilled'||!r.providerContribution||!r.outputBytes)throw Error('Wait for a fulfilled Solana request');
- if(r.inputDigest!==hex(await hash(enc.encode(JSON.stringify(r.input)))))throw Error('Fixed inputs changed');
- if(!Number.isInteger(r.numHashes)||r.numHashes<1||r.numHashes>256)throw Error('Invalid commitment path');
- let root=bytes(r.providerContribution);for(let i=0;i<r.numHashes;i++)root=await hash(root);
- if(hex(root)!==r.providerCommitment)throw Error('Reveal does not match commitment');
- const output=await hash(enc.encode('qentra-solana-v1'),pub(r.requestAddress),bytes(r.userContribution),bytes(r.providerContribution),bytes(r.inputDigest));
- if(hex(output)!==r.outputBytes)throw Error('Output does not match request');
- if(JSON.stringify(await mapOutput(r.outputBytes,r.input.mapping))!==JSON.stringify(r.mapping))throw Error('Application result changed');
-}
-
 // Wallet/account discovery follows the inspected external-wallet donors. RPC and
 // message encoding use Kit; no keys, upstream responses or custody enter this API.
 export class SolanaQVRFClient {

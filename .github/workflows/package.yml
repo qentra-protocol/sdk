@@ -104,6 +104,7 @@ jobs:
             snapshot/ACQUISITION.json
             snapshot/MANIFEST.json
             snapshot/source/package-proof.json
+            snapshot/source/.package-proof/core-only/core-proof-receipt.json
             snapshot/source/*.tgz
             snapshot/source/.package-proof/consumer/offline-proof-receipt.json
             snapshot/source/.package-proof/core/package-lock.json
