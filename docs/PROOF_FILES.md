@@ -53,4 +53,4 @@ The [installed consumer](../examples/offline-proof-consumer.mjs) exercises tourn
 
 ## Shared core implementation
 
-The SDK root and proof subpath reexport proof-file APIs from `@qentra/core` `0.2.0-dev.0`. `verifyProtocolRecord` and `ProtocolInput` / `ProtocolRecord` also come from core; wallet/RPC transport and recovery remain in the SDK. Recipients can install core alone to check exported fulfilled schema4 draws. See [core proof module guide](https://github.com/nicpilsner/qentra-core/blob/main/docs/PROTOCOL_PROOFS.md).
+The SDK root and proof subpath reexport proof-file APIs from `@qentra/core` `0.2.0-dev.0`. `verifyProtocolRecord` and `ProtocolInput` / `ProtocolRecord` also come from core; wallet/RPC transport and recovery remain in the SDK. Recipients can install core alone to check exported fulfilled schema4 draws. See [core proof module guide](https://github.com/qentra-protocol/core/blob/main/docs/PROTOCOL_PROOFS.md).

@@ -38,7 +38,8 @@
     "examples/allocation-draw.mjs",
     "docs/ALLOCATION.md",
     "examples/wait-and-reopen.mjs",
-    "docs/WAITING.md"
+    "docs/WAITING.md",
+    "docs/INSTALL.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -65,5 +66,9 @@
   },
   "bin": {
     "qentra-proof": "./dist/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qentra-protocol/sdk.git"
   }
 }

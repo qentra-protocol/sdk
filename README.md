@@ -1,10 +1,10 @@
 # Qentra Protocol SDK
 
-Randomness infrastructure for the quantum era: native Solana requests and checkable quantum-origin draws for tournament winners, allocation applicants and agent selection.
+Quantum randomness infrastructure for onchain applications: native Solana requests and checkable quantum-origin draws for tournament winners, allocation applicants and agent selection.
 
 The primary `QVRFClient` is `SolanaQVRFClient`. An external wallet signs one ordinary-SOL transfer + indexed memo + proof-request transaction. Service-issued persisted quotes bind fixed rules; default shared-workspace draws have no per-draw rent. The SDK waits for checked reveal, verifies deterministic mapping, and reopens historical event or account proofs.
 
-Program: `CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d`. [Mainnet program](https://explorer.solana.com/address/CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d) · [Developer guide](https://github.com/nicpilsner/qentra-docs) · [Core/helpers](https://github.com/nicpilsner/qentra-core).
+Program: `CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d`. [Mainnet program](https://explorer.solana.com/address/CcoAe9c5yenzozkSqdiJAmaCeoZTiSSV5urBUnC1oa8d) · [Developer guide](https://github.com/qentra-protocol/docs) · [Core/helpers](https://github.com/qentra-protocol/core).
 
 Use Node 22+ and reviewed local core/SDK tarballs. Version `0.3.0-dev.0` requires core peer `0.2.0-dev.0`; no npm publication is implied. See [client guide](docs/CLIENT.md), [native recipe](examples/native-draw.ts) and [packed consumer fixture](examples/packed-consumer.mjs).
 
@@ -34,4 +34,8 @@ Read [bounded saved-draw waits](docs/WAITING.md) for cancellation, total deadlin
 
 ## Portable core proofs
 
-SDK `0.3.0-dev.0` consumes `@qentra/core` `0.2.0-dev.0` for shared protocol types, record verification and proof-file APIs. Existing SDK imports remain compatible. A tournament recipient can verify the exported fulfilled draw with core alone, without a wallet or RPC. [Shared module and saved-file example](https://github.com/nicpilsner/qentra-core/blob/main/docs/PROTOCOL_PROOFS.md).
+SDK `0.3.0-dev.0` consumes `@qentra/core` `0.2.0-dev.0` for shared protocol types, record verification and proof-file APIs. Existing SDK imports remain compatible. A tournament recipient can verify the exported fulfilled draw with core alone, without a wallet or RPC. [Shared module and saved-file example](https://github.com/qentra-protocol/core/blob/main/docs/PROTOCOL_PROOFS.md).
+
+## Installation
+
+[Build from source or install matching release tarballs](docs/INSTALL.md). Releases include checksum verification and both package versions; availability follows the repository release list.

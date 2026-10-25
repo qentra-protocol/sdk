@@ -12,7 +12,7 @@ try:
  assert not any(os.environ.get(k) for k in ['GH_TOKEN','GITHUB_TOKEN','NODE_AUTH_TOKEN','NPM_TOKEN','HTTPS_PROXY','https_proxy','HTTP_PROXY','http_proxy','AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY']),'credential-bearing environment'
  assert not (pathlib.Path.home()/'.npmrc').exists() and not (pathlib.Path.home()/'.netrc').exists(),'credential file'
  archive=root/'tests/fixtures/core-source.tgz'
- assert sha(archive)=='4b295cdb34ea38847cbcd655d6b2fabec629b7424f756ba19a7eec0fc1127d91','core courier changed'
+ assert sha(archive)=='fda5c4dec576981cb4c975e0bd057f627871aa141f2f0d48b55cfb2070854122','core courier changed'
  core=work/'core';core.mkdir(exist_ok=True)
  with tarfile.open(archive) as t:
   for m in t.getmembers():
