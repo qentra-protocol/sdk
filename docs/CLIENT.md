@@ -32,7 +32,7 @@ async function selectWinner(rpcUrl: string, quoteUrl: string,
 
 Review the quoted amount before calling `request`. That call obtains a requester/sequence-bound persisted quote and composes ordinary SOL transfer, indexed memo and proof-request instructions into one externally signed transaction. Mainnet requires `quoteUrl`. A changed price causes a review error before signing when `expectedFee` is supplied.
 
-Save the ID before waiting. A timeout means reopen this ID, not create/pay another draw. If confirmation itself times out, save the transaction signature reported in the error, inspect its status and recover the associated request through `getRequest`/`listRequests` before retrying. Read [recovery](recovery.md).
+Save the ID before waiting. A timeout means reopen this ID, not create/pay another draw. If confirmation itself times out, save the transaction signature reported in the error, inspect its status and recover the associated request through `getRequest`/`listRequests` before retrying. Read [recovery](RECOVERY.md).
 
 For an allocation, fix `mapping: { kind: 'shuffle', items: ['Amber', 'Birch', 'Cedar'] }` before payment. For sampling, use `pickUnique` with a fixed count; for weighted selection use `weightedPick` with fixed weights. Rules, labels and quote identity are included in the input digest; do not remap after the reveal.
 
